@@ -1,5 +1,7 @@
 # QMChatStudio
 
+![QMChatStudio主页](/images/show.jpg)
+
 这是一个基于 OpenAI API 与 Ant Design X 的组件库的的聊天应用 ,提供了流式响应的对话体验。
 
 ## 技术栈
