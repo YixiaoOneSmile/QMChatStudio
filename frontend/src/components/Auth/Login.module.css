@@ -1,0 +1,58 @@
+.container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f0f2f5;
+}
+
+.card {
+  width: 900px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.leftSide {
+  background: #f6f8fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.loginImage {
+  width: 100%;
+  max-width: 360px;
+  height: auto;
+}
+
+.rightSide {
+  padding: 40px;
+}
+
+.formContainer {
+  max-width: 320px;
+  margin: 0 auto;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .card {
+    width: 95%;
+    max-width: 450px;
+  }
+
+  .leftSide {
+    display: none;
+  }
+
+  .rightSide {
+    width: 100%;
+  }
+
+  .formContainer {
+    padding: 20px;
+  }
+} 

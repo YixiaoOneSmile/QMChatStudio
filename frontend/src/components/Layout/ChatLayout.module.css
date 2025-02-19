@@ -1,0 +1,89 @@
+.container {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.menu {
+  background: #f6f8fa80;
+  width: 280px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.logo {
+  display: flex;
+  height: 72px;
+  align-items: center;
+  padding: 0 24px;
+}
+
+.logo img {
+  width: 24px;
+  height: 24px;
+}
+
+.logo span {
+  margin-left: 8px;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.addBtn {
+  background: #1677ff0f;
+  border: 1px solid #1677ff34;
+  width: calc(100% - 24px);
+  margin: 0 12px 24px 12px;
+}
+
+.conversations {
+  padding: 0 12px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.mainContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+.headerExtra {
+  position: absolute;
+  right: 24px;
+  top: 24px;
+  z-index: 10;
+}
+
+.chatArea {
+  flex: 1;
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+}
+
+.messages {
+  flex: 1;
+}
+
+.placeholder {
+  padding-top: 32px;
+  width: 100%;
+}
+
+.senderArea {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 16px 24px;
+  background: #fff;
+} 
