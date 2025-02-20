@@ -1,5 +1,6 @@
 import React, { useContext } from 'react';
-import { Menu } from 'antd';
+import { Button } from 'antd';
+import { Conversations } from '@ant-design/x';
 import { PlusOutlined, LogoutOutlined } from '@ant-design/icons';
 import { ThemeContext } from '../../contexts/ThemeContext';
 import styles from './Sidebar.module.css';
@@ -24,25 +25,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const { darkMode } = useContext(ThemeContext);
 
-  const menuItems = [
-    {
-      key: 'new',
-      icon: <PlusOutlined />,
-      label: '新建对话',
-      onClick: onAddConversation,
-    },
-    ...conversations.map(conv => ({
-      key: conv.key,
-      label: conv.label,
-    })),
-    {
-      key: 'logout',
-      icon: <LogoutOutlined />,
-      label: '退出登录',
-      onClick: onLogout,
-    },
-  ];
-
   return (
     <div className={styles.container}>
       <div className={styles.logo}>
@@ -53,16 +35,33 @@ export const Sidebar: React.FC<SidebarProps> = ({
         />
         <span style={{ color: darkMode ? '#fff' : '#000' }}>QMChatStudio</span>
       </div>
-      <Menu
-        mode="inline"
-        selectedKeys={[activeKey]}
-        items={menuItems}
-        onClick={({ key }) => {
-          if (!['new', 'logout'].includes(key)) {
-            onActiveChange(key);
-          }
-        }}
-      />
+      <div className={styles.newChat}>
+        <Button 
+          type="text" 
+          icon={<PlusOutlined />} 
+          onClick={onAddConversation}
+          block
+        >
+          新建对话
+        </Button>
+      </div>
+      <div className={styles.conversationList}>
+        <Conversations
+          items={conversations}
+          activeKey={activeKey}
+          onActiveChange={onActiveChange}
+        />
+      </div>
+      <div className={styles.footer}>
+        <Button 
+          type="text" 
+          icon={<LogoutOutlined />} 
+          onClick={onLogout}
+          block
+        >
+          退出登录
+        </Button>
+      </div>
     </div>
   );
 }; 

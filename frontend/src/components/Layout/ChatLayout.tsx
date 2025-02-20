@@ -80,7 +80,9 @@ export const ChatLayout: React.FC = () => {
               </Dropdown>
             </Space>
           </div>
-          <ChatArea />
+          <ChatArea 
+            conversationId={activeKey} 
+          />
         </Content>
       </Layout>
     </Layout>

@@ -49,7 +49,11 @@ const defaultPrompts = [
   },
 ];
 
-export const ChatArea: React.FC = () => {
+interface ChatAreaProps {
+  conversationId: string;
+}
+
+export const ChatArea: React.FC<ChatAreaProps> = ({ conversationId }) => {
   const { currentModel } = useSelector((state: RootState) => state.models);
   const [content, setContent] = React.useState('');
   const [attachedFiles, setAttachedFiles] = React.useState<GetProp<typeof Attachments, 'items'>>([]);
@@ -103,7 +107,20 @@ export const ChatArea: React.FC = () => {
     },
   });
 
-  const { messages, onRequest } = useXChat({ agent });
+  const { messages, onRequest, setMessages } = useXChat({ 
+    agent,
+  });
+
+  // 重置消息
+  const resetChat = React.useCallback(() => {
+    setMessages([]);
+    setContent('');
+  }, [setMessages]);
+
+  // 监听 conversationId 变化
+  React.useEffect(() => {
+    resetChat();
+  }, [conversationId, resetChat]);
 
   const handleSubmit = (message: string) => {
     if (!message) return;

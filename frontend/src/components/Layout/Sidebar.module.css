@@ -1,62 +1,47 @@
 .container {
-  height: 100%;
   display: flex;
   flex-direction: column;
+  height: 100%;
 }
 
 .logo {
+  padding: 16px;
   display: flex;
-  height: 72px;
   align-items: center;
-  padding: 0 24px;
-  border-bottom: 1px solid var(--ant-color-border);
+  gap: 8px;
 }
 
 .logo img {
-  width: 30px;
-  height: 30px;
+  width: 24px;
+  height: 24px;
 }
 
 .logo span {
   margin-left: 8px;
   font-weight: bold;
-  font-size: 20px;
+  font-size: 16px;
 }
 
-/* 覆盖 antd 默认样式 */
-.container :global(.ant-menu) {
-  flex: 1;
-  border-inline-end: none !important;
-  background: transparent;
+.newChat {
+  padding: 0 16px;
+  margin-bottom: 16px;
 }
 
-.container :global(.ant-menu-item) {
+.newChat :global(.ant-btn) {
+  text-align: left;
   height: 40px;
-  line-height: 40px;
-  margin: 4px 8px !important;
-  border-radius: 6px;
 }
 
-.container :global(.ant-menu-item-selected) {
-  background-color: var(--ant-color-primary-bg) !important;
-}
-
-/* 新建对话按钮样式 */
-.container :global(.ant-menu-item:first-child) {
-  margin-top: 12px !important;
-}
-
-/* 退出登录按钮样式 */
-.container :global(.ant-menu-item:last-child) {
-  position: absolute;
-  bottom: 12px;
-  width: calc(100% - 16px);
-  margin-bottom: 0 !important;
+/* Conversations 组件会自动填充剩余空间 */
+.conversationList {
+  flex: 1;
+  overflow-y: auto;
 }
 
 .footer {
-  padding: 12px 8px;
-  border-top: 1px solid var(--ant-color-border);
+  padding: 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  margin-top: auto;
 }
 
 .footer :global(.ant-btn) {
