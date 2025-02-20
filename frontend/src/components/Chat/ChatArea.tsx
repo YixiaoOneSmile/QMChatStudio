@@ -1,102 +1,206 @@
 import React from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { Bubble, Sender } from '@ant-design/x';
-import { MessageList } from './MessageList';
-import { InputArea } from './InputArea';
-import { ModelSelector } from './ModelSelector';
+import { useSelector } from 'react-redux';
+import { useXAgent, useXChat, Bubble, Welcome, Prompts, Sender, Attachments } from '@ant-design/x';
+import { Button, Badge, Space } from 'antd';
+import { 
+  FireOutlined, 
+  ReadOutlined, 
+  PaperClipOutlined,
+  CloudUploadOutlined,
+} from '@ant-design/icons';
+import type { GetProp } from 'antd';
 import type { RootState } from '../../store';
 import styles from './ChatArea.module.css';
 
+const roles: GetProp<typeof Bubble.List, 'roles'> = {
+  ai: {
+    placement: 'start',
+    typing: { step: 5, interval: 20 },
+    styles: {
+      content: {
+        borderRadius: 16,
+      },
+    },
+  },
+  local: {
+    placement: 'end',
+    variant: 'shadow',
+  },
+};
+
+const defaultPrompts = [
+  {
+    key: 'whats-new',
+    icon: <FireOutlined />,
+    title: "What's new in X?",
+    description: "Learn about the latest features",
+  },
+  {
+    key: 'whats-agi',
+    icon: <ReadOutlined />,
+    title: "What's AGI?",
+    description: "Understanding Artificial General Intelligence",
+  },
+  {
+    key: 'where-doc',
+    icon: <ReadOutlined />,
+    title: 'Where is the doc?',
+    description: "Find documentation and guides",
+  },
+];
+
 export const ChatArea: React.FC = () => {
-  const dispatch = useDispatch();
-  const { currentConversation } = useSelector((state: RootState) => state.conversations);
   const { currentModel } = useSelector((state: RootState) => state.models);
-  const [isLoading, setIsLoading] = React.useState(false);
+  const [content, setContent] = React.useState('');
+  const [attachedFiles, setAttachedFiles] = React.useState<GetProp<typeof Attachments, 'items'>>([]);
+  const [headerOpen, setHeaderOpen] = React.useState(false);
 
-  const handleSendMessage = async (message: string) => {
-    if (!message.trim() || isLoading) return;
-    
-    setIsLoading(true);
-    try {
-      const response = await fetch('http://localhost:3001/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ message }),
-      });
-
-      if (!response.ok) throw new Error('网络响应不正确');
-
-      const reader = response.body?.getReader();
-      if (!reader) throw new Error('无法获取响应流');
-
-      let assistantMessage = '';
-
-      // 这里需要dispatch一个action来添加AI的空消息
-      dispatch({
-        type: 'conversations/addMessage',
-        payload: {
-          conversationId: currentConversation?.id,
-          message: {
-            role: 'assistant',
-            content: '',
-          },
-        },
-      });
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = new TextDecoder().decode(value);
-        const lines = chunk.split('\n');
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6);
-            if (data === '[DONE]') continue;
-
-            try {
-              const parsed = JSON.parse(data);
-              assistantMessage += parsed.content;
-              
-              // 更新最后一条AI消息
-              dispatch({
-                type: 'conversations/updateLastMessage',
-                payload: {
-                  conversationId: currentConversation?.id,
-                  content: assistantMessage,
-                },
-              });
-            } catch (e) {
-              console.error('解析响应数据错误:', e);
-            }
-          }
-        }
+  const [agent] = useXAgent({
+    baseURL: 'http://localhost:3001/api',
+    model: currentModel?.id,
+    request: async ({ message }, { onSuccess, onUpdate }) => {
+      if (!message) {
+        console.error('消息不能为空');
+        return;
       }
-    } catch (error) {
-      console.error('发送消息错误:', error);
-      dispatch({
-        type: 'conversations/addMessage',
-        payload: {
-          conversationId: currentConversation?.id,
-          message: {
-            role: 'assistant',
-            content: '抱歉，发生了一些错误。请稍后重试。',
-          },
-        },
-      });
-    } finally {
-      setIsLoading(false);
+
+      try {
+        onUpdate('');
+
+        const es = new EventSource(`http://localhost:3001/api/chat?message=${encodeURIComponent(message)}`);
+        let currentContent = '';
+
+        es.onmessage = (event) => {
+          const data = event.data || '';
+          if (data === '[DONE]') {
+            es.close();
+            onSuccess(currentContent);
+            return;
+          }
+
+          try {
+            const obj = JSON.parse(data);
+            const content = obj.choices[0]?.delta?.content;
+            
+            if (content) {
+              currentContent += content;
+              onUpdate(currentContent);
+            }
+          } catch (e) {
+            console.error('解析响应数据错误:', e);
+            es.close();
+          }
+        };
+
+        es.onerror = (error) => {
+          console.error('EventSource 错误:', error);
+          es.close();
+        };
+
+      } catch (error) {
+        console.error('发送消息错误:', error);
+      }
+    },
+  });
+
+  const { messages, onRequest } = useXChat({ agent });
+
+  const handleSubmit = (message: string) => {
+    if (!message) return;
+    onRequest(message);
+    setContent('');
+  };
+
+  const handleFileChange: GetProp<typeof Attachments, 'onChange'> = (info) => {
+    setAttachedFiles(info.fileList);
+  };
+
+  const handlePromptsItemClick = (info: { data: GetProp<typeof Prompts, 'items'>[number] }) => {
+    if (info.data.description) {
+      setContent(info.data.description as string);
     }
   };
 
+
+  const attachmentsNode = (
+    <Badge dot={attachedFiles.length > 0 && !headerOpen}>
+      <Button 
+        type="text" 
+        icon={<PaperClipOutlined />} 
+        onClick={() => setHeaderOpen(!headerOpen)} 
+      />
+    </Badge>
+  );
+
+  const senderHeader = (
+    <Sender.Header
+      title="Attachments"
+      open={headerOpen}
+      onOpenChange={setHeaderOpen}
+      styles={{
+        content: {
+          padding: 0,
+        },
+      }}
+    >
+      <Attachments
+        beforeUpload={() => false}
+        items={attachedFiles}
+        onChange={handleFileChange}
+        placeholder={(type) =>
+          type === 'drop'
+            ? { title: 'Drop file here' }
+            : {
+                icon: <CloudUploadOutlined />,
+                title: 'Upload files',
+                description: 'Click or drag files to this area to upload',
+              }
+        }
+      />
+    </Sender.Header>
+  );
+
   return (
     <div className={styles.chatArea}>
-      <ModelSelector />
-      <MessageList conversation={currentConversation} />
-      <InputArea onSendMessage={handleSendMessage} isLoading={isLoading} />
+      <Bubble.List
+        className={styles.messages}
+        roles={roles}
+        items={
+          messages.length > 0
+            ? messages.map(({ id, message, status }) => ({
+                key: id,
+                role: status === 'local' ? 'local' : 'ai',
+                content: message,
+                loading: status === 'loading' && !message,
+              }))
+            : [{
+                key: 'welcome',
+                content: (
+                  <Space direction="vertical" size={16} className={styles.placeholder}>
+                    <Welcome
+                      variant="borderless"
+                      icon="https://mdn.alipayobjects.com/huamei_iwk9zp/afts/img/A*s5sNRo5LjfQAAAAAAAAAAAAADgCCAQ/fmt.webp"
+                      title="Hello, I'm QMChatStudio"
+                      description="Base on Ant Design, AGI product interface solution, create a better intelligent vision"
+                    />
+                    <Prompts 
+                      items={defaultPrompts} 
+                      onItemClick={handlePromptsItemClick}
+                    />
+                  </Space>
+                ),
+                variant: 'borderless',
+              }]
+        }
+      />
+      <Sender
+        value={content}
+        onChange={setContent}
+        onSubmit={handleSubmit}
+        loading={agent.isRequesting()}
+        header={senderHeader}
+        prefix={attachmentsNode}
+      />
     </div>
   );
 }; 
