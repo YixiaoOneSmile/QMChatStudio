@@ -60,13 +60,11 @@ export const ChatLayout: React.FC = () => {
   React.useEffect(() => {
     const root = document.documentElement;
     if (isDarkMode) {
-      root.style.setProperty('--sidebar-bg', 'rgba(0, 0, 0, 1)');
-      root.style.setProperty('--content-bg', 'rgba(14, 14, 14, 1)');
+      root.style.setProperty('--sidebar-bg', '#000000');
+      root.style.setProperty('--content-bg', '#141414');
     } else {
-      root.style.setProperty('--sidebar-bg', 'rgba(0, 0, 0, 0.02)');
-      root.style.setProperty('--content-bg', '#ffffff');
-      root.style.setProperty('--text-color', token.colorText);
-      root.style.setProperty('--border-color', token.colorBorder);
+      root.style.removeProperty('--sidebar-bg');
+      root.style.removeProperty('--content-bg');
     }
   }, [isDarkMode, token]);
 

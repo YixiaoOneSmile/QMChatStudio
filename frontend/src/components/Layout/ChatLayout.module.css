@@ -3,9 +3,11 @@
   width: 100%;
   height: 100vh;
   overflow: hidden;
+  background: var(--content-bg) !important;
 }
-
-
+:global .ant-layout {
+  background: var(--content-bg) !important;
+}
 .menu.collapsed {
   width: 80px;
 }
@@ -90,7 +92,6 @@
   flex-direction: column;
   position: relative;
   overflow: hidden;
-  background: var(--content-bg);
 }
 
 .headerExtra {
