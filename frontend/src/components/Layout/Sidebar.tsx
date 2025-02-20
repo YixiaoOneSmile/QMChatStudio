@@ -37,7 +37,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
       <div className={styles.newChat}>
         <Button 
-          type="text" 
+          // type="text" 
           icon={<PlusOutlined />} 
           onClick={onAddConversation}
           block

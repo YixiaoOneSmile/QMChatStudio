@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { Navigate } from 'react-router-dom';
-import { Button, Space, Dropdown, Layout } from 'antd';
+import { Button, Space, Dropdown, Layout, theme } from 'antd';
 import { 
   ShareAltOutlined,
   EllipsisOutlined,
@@ -13,29 +13,31 @@ import { ThemeContext } from '../../contexts/ThemeContext';
 import styles from './ChatLayout.module.css';
 import { Sidebar } from './Sidebar';
 import { ChatArea } from '../Chat/ChatArea';
+import { 
+  addConversation, 
+  setActiveConversation 
+} from '../../store/slices/conversationsSlice';
 
 const { Sider, Content } = Layout;
 
-const defaultConversations = [
-  {
-    key: '0',
-    label: '什么是 QMChatStudio?',
-  },
-];
-
 export const ChatLayout: React.FC = () => {
+  const dispatch = useDispatch();
+  const { conversations, activeConversationId } = useSelector(
+    (state: RootState) => state.conversations
+  );
   const { currentUser } = useSelector((state: RootState) => state.user);
   const { darkMode, setDarkMode } = useContext(ThemeContext);
-  const [conversations, setConversations] = React.useState(defaultConversations);
-  const [activeKey, setActiveKey] = React.useState(defaultConversations[0].key);
+  const { token } = theme.useToken();
+  const isDarkMode = token.colorBgContainer === '#141414';
 
   const handleAddConversation = () => {
-    const newConversation = {
-      key: `${conversations.length}`,
-      label: `新对话 ${conversations.length}`,
-    };
-    setConversations([...conversations, newConversation]);
-    setActiveKey(newConversation.key);
+    dispatch(addConversation({
+      title: `新对话 ${conversations.length}`,
+    }));
+  };
+
+  const handleConversationChange = (key: string) => {
+    dispatch(setActiveConversation(key));
   };
 
   const handleThemeChange = () => {
@@ -55,6 +57,19 @@ export const ChatLayout: React.FC = () => {
     // 处理退出登录逻辑
   };
 
+  React.useEffect(() => {
+    const root = document.documentElement;
+    if (isDarkMode) {
+      root.style.setProperty('--sidebar-bg', 'rgba(0, 0, 0, 1)');
+      root.style.setProperty('--content-bg', 'rgba(14, 14, 14, 1)');
+    } else {
+      root.style.setProperty('--sidebar-bg', 'rgba(0, 0, 0, 0.02)');
+      root.style.setProperty('--content-bg', '#ffffff');
+      root.style.setProperty('--text-color', token.colorText);
+      root.style.setProperty('--border-color', token.colorBorder);
+    }
+  }, [isDarkMode, token]);
+
   if (!currentUser) {
     return <Navigate to="/login" />;
   }
@@ -63,9 +78,12 @@ export const ChatLayout: React.FC = () => {
     <Layout className={styles.container}>
       <Sider width={280} theme={darkMode ? 'dark' : 'light'}>
         <Sidebar
-          conversations={conversations}
-          activeKey={activeKey}
-          onActiveChange={setActiveKey}
+          conversations={conversations.map(conv => ({
+            key: conv.id,
+            label: conv.title,
+          }))}
+          activeKey={activeConversationId || ''}
+          onActiveChange={handleConversationChange}
           onAddConversation={handleAddConversation}
           onLogout={handleLogout}
         />
@@ -81,7 +99,7 @@ export const ChatLayout: React.FC = () => {
             </Space>
           </div>
           <ChatArea 
-            conversationId={activeKey} 
+            conversationId={activeConversationId || ''} 
           />
         </Content>
       </Layout>

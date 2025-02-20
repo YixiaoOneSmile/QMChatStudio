@@ -12,19 +12,20 @@
 }
 
 .logo img {
-  width: 24px;
-  height: 24px;
+  width: 30px;
+  height: 30px;
 }
 
 .logo span {
   margin-left: 8px;
   font-weight: bold;
-  font-size: 16px;
+  font-size: 20px;
 }
 
 .newChat {
   padding: 0 16px;
-  margin-bottom: 16px;
+  /* margin-bottom: 16px; */
+  margin-top: 10px;
 }
 
 .newChat :global(.ant-btn) {
@@ -40,11 +41,10 @@
 
 .footer {
   padding: 16px;
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
   margin-top: auto;
 }
 
 .footer :global(.ant-btn) {
   text-align: left;
   height: 40px;
-} 
+}

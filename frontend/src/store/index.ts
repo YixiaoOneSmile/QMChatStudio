@@ -1,14 +1,14 @@
 // 使用 Redux Toolkit 进行状态管理
 import { configureStore } from '@reduxjs/toolkit';
 import userReducer from './slices/userSlice';
-import conversationsReducer from './slices/conversationsSlice';
 import modelsReducer from './slices/modelsSlice';
+import conversationsReducer from './slices/conversationsSlice';
 
 export const store = configureStore({
   reducer: {
     user: userReducer,
-    conversations: conversationsReducer,
     models: modelsReducer,
+    conversations: conversationsReducer,
   },
 });
 
