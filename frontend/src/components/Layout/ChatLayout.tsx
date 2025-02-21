@@ -64,7 +64,7 @@ export const ChatLayout: React.FC = () => {
       root.style.setProperty('--content-bg', '#141414');
     } else {
       root.style.removeProperty('--sidebar-bg');
-      root.style.removeProperty('--content-bg');
+      root.style.setProperty('--content-bg', '#f5f5f5');
     }
   }, [isDarkMode, token]);
 

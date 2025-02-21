@@ -1,11 +1,11 @@
 import React from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { Button, Form, Input, message, Card, Row, Col, Typography, Space } from 'antd';
+import { Button, Form, Input, message, Card, Row, Col, Typography,  } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
-import { Welcome } from '@ant-design/x';
 import { login } from '../../store/slices/userSlice';
 import styles from './Login.module.css';
+import loginDecoration from '../../assets/images/login-decoration.svg';
 
 const { Title } = Typography;
 
@@ -37,19 +37,17 @@ export const Login: React.FC = () => {
       <Card className={styles.card}>
         <Row>
           <Col span={12} className={styles.leftSide}>
-            <Space direction="vertical" size={24} className={styles.welcomeArea}>
-              <Welcome
-                variant="borderless"
-                icon="https://mdn.alipayobjects.com/huamei_iwk9zp/afts/img/A*s5sNRo5LjfQAAAAAAAAAAAAADgCCAQ/fmt.webp"
-                title="Hello, I'm QMChatStudio"
-                description="Base on Ant Design, AGI product interface solution, create a better intelligent vision"
-              />
-              <div className={styles.features}>
-                <Button type="text" icon={<UserOutlined />}>What's new in X?</Button>
-                <Button type="text" icon={<LockOutlined />}>What's AGI?</Button>
-                <Button type="text" icon={<UserOutlined />}>Where is the doc?</Button>
-              </div>
-            </Space>
+            <img 
+              src={loginDecoration} 
+              alt="Login decoration" 
+              style={{
+                width: '100%',
+                maxWidth: '400px',
+                height: 'auto',
+                display: 'block',
+                margin: '0 auto'
+              }}
+            />
           </Col>
           <Col span={12} className={styles.rightSide}>
             <div className={styles.formContainer}>

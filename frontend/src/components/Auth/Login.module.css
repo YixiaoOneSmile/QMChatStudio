@@ -15,11 +15,11 @@
 }
 
 .leftSide {
-  background: #f6f8fa;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 40px;
+  padding: 24px;
+  background-color: #fafafa;
 }
 
 .loginImage {
