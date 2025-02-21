@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { OpenAI } from 'openai';
 import dotenv from 'dotenv';
+import { UserService } from './services/userService';
 
 dotenv.config();
 
@@ -13,6 +14,8 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
   baseURL: process.env.OPENAI_API_URL,
 });
+
+const userService = new UserService();
 
 app.use(cors());
 app.use(express.json());
@@ -54,6 +57,47 @@ app.get('/api/chat', async (req, res) => {
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ error: '服务器错误' });
+  }
+});
+
+// 注册接口
+app.post('/api/register', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const result = await userService.register({ username, password });
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// 登录接口
+app.post('/api/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const result = await userService.login({ username, password });
+    res.json(result);
+  } catch (error: any) {
+    res.status(401).json({ error: error.message });
+  }
+});
+
+// 管理 API 路由
+app.get('/api/admin/users', async (req, res) => {
+  try {
+    const users = await userService.getAllUsers();
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: '获取用户列表失败' });
+  }
+});
+
+app.delete('/api/admin/users/:id', async (req, res) => {
+  try {
+    await userService.deleteUser(parseInt(req.params.id));
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: '删除用户失败' });
   }
 });
 

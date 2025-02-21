@@ -6,15 +6,26 @@
   "scripts": {
     "start": "node dist/server.js",
     "dev": "nodemon src/server.ts",
-    "build": "tsc"
+    "build": "tsc",
+    "db:migrate": "ts-node src/database/dbManager.ts migrate",
+    "db:seed": "ts-node src/database/dbManager.ts seed",
+    "db:rollback": "ts-node src/database/dbManager.ts rollback",
+    "db:setup": "ts-node src/database/dbManager.ts setup",
+    "build:admin": "cd src/admin && npm run build",
+    "postbuild:admin": "mkdir -p public/admin && cp -r src/admin/dist/* public/admin/"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/bcrypt": "^5.0.2",
+    "@types/jsonwebtoken": "^9.0.8",
+    "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.12.0",
     "openai": "^4.24.1"
   },
   "devDependencies": {

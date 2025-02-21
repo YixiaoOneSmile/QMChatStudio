@@ -51,9 +51,9 @@ export const Login: React.FC = () => {
           </Col>
           <Col span={12} className={styles.rightSide}>
             <div className={styles.formContainer}>
-              <Title level={2}>欢迎使用</Title>
-              <Title level={4} type="secondary" style={{ marginBottom: 40 }}>
-                QMChatStudio
+              <Title level={2}>QMChatStudio</Title>
+              <Title level={5} type="secondary" style={{ marginBottom: 40 }}>
+                极简、美观的Chat解决方案
               </Title>
               <Form
                 form={form}

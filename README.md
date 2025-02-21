@@ -51,7 +51,15 @@ npm install
 # 创建 .env 文件
 cp .env_template .env
 
-# 修改 .env 文件 配置Key 与 代理URL（国内的话需要配置代理）
+# 修改 .env 文件 配置Key 、数据库与 代理URL（国内的话需要配置代理）
+
+# 初始化数据库（创建表和默认用户）
+npm run db:setup
+
+# 或者单独运行
+npm run db:migrate  # 只创建表
+npm run db:seed    # 只创建默认用户
+npm run db:rollback # 回滚（删除表）
 
 # 运行后端
 npm run dev
