@@ -65,7 +65,5 @@ npm run db:rollback # 回滚（删除表）
 npm run dev
 ```
 
-## 注意
 
-- 后端接口实际上只调用了一个 `/api/chat` 接口,并且这个接口实际上只做了一件事,就是调用 OpenAI API 的 `chat.completions` 接口,并返回流式响应。
 

@@ -1,13 +1,39 @@
-import * as createUsersTable from './migrations/001_create_users_table';
-import * as createConversationsTable from './migrations/002_create_conversations_table';
-import * as createDefaultUser from './seeds/001_create_default_user';
+import fs from 'fs';
+import path from 'path';
 import { pool } from '../config/database';
+import * as createDefaultUser from './seeds/001_create_default_user';
+
+// 获取所有迁移文件并按序号排序
+async function getMigrationFiles() {
+  const migrationsDir = path.join(__dirname, 'migrations');
+  const files = await fs.promises.readdir(migrationsDir);
+  return files
+    .filter(file => file.endsWith('.ts'))
+    .sort((a, b) => {
+      const numA = parseInt(a.split('_')[0]);
+      const numB = parseInt(b.split('_')[0]);
+      return numA - numB;
+    });
+}
 
 async function migrate() {
   console.log('🚀 Running migrations...');
-  await createUsersTable.up();
-  await createConversationsTable.up();
-  console.log('✨ All migrations completed');
+  try {
+    const migrationFiles = await getMigrationFiles();
+    
+    for (const file of migrationFiles) {
+      const migration = require(path.join(__dirname, 'migrations', file));
+      const migrationName = file.replace('.ts', '');
+      
+      console.log(`Running migration: ${migrationName}`);
+      await migration.up();
+    }
+    
+    console.log('✨ All migrations completed');
+  } catch (error) {
+    console.error('❌ Migration failed:', error);
+    throw error;
+  }
 }
 
 async function seed() {
@@ -18,9 +44,23 @@ async function seed() {
 
 async function rollback() {
   console.log('⏪ Rolling back migrations...');
-  await createConversationsTable.down();
-  await createUsersTable.down();
-  console.log('✨ Rollback completed');
+  try {
+    const migrationFiles = await getMigrationFiles();
+    
+    // 反转数组以便从后往前回滚
+    for (const file of migrationFiles.reverse()) {
+      const migration = require(path.join(__dirname, 'migrations', file));
+      const migrationName = file.replace('.ts', '');
+      
+      console.log(`Rolling back: ${migrationName}`);
+      await migration.down();
+    }
+    
+    console.log('✨ Rollback completed');
+  } catch (error) {
+    console.error('❌ Rollback failed:', error);
+    throw error;
+  }
 }
 
 async function setup() {

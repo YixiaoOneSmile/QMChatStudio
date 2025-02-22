@@ -12,8 +12,7 @@
     "db:rollback": "ts-node src/database/dbManager.ts rollback",
     "db:setup": "ts-node src/database/dbManager.ts setup",
     "test": "jest",
-    "test:watch": "jest --watch",
-    "migrate": "ts-node src/database/migrate.ts"
+    "test:watch": "jest --watch"
   },
   "keywords": [],
   "author": "",
