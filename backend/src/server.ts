@@ -7,6 +7,7 @@ import { ConversationService } from './services/conversationService';
 import { authMiddleware } from './middleware/auth';
 import { AuthenticatedRequest } from './types/custom';
 import { Request } from 'express';
+import { ChatService } from './services/chatService';
 
 dotenv.config();
 
@@ -21,6 +22,7 @@ const openai = new OpenAI({
 
 const userService = new UserService();
 const conversationService = new ConversationService();
+const chatService = new ChatService();
 
 app.use(cors());
 app.use(express.json());
@@ -31,55 +33,6 @@ app.get('/api/chat', authMiddleware, async (req, res) => {
     const { message, conversationId } = req.query;
     const userId = (req as any).user.id;
 
-    // 如果没有 conversationId，创建新对话
-    let conversation;
-    if (!conversationId) {
-      const title = (message as string).slice(0, 20) + '...';
-      conversation = await conversationService.createConversation(
-        userId,
-        title,
-        Date.now().toString()
-      );
-    } else {
-      conversation = await conversationService.getConversation(conversationId as string);
-   
-      if (!conversation) {
-        const title = (message as string).slice(0, 20) + '...';
-        conversation = await conversationService.createConversation(
-          userId,
-          title,
-          conversationId as string
-        );
-      }
-    }
-
-    // 获取最近10轮对话历史
-    const messageHistory = await conversationService.getRecentMessages(conversation.id, 10);
-
-    // @ts-ignore
-    const stream = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: "You are a helpful assistant." },
-        ...messageHistory.map(msg => ({
-          role: msg.role === 'local' ? 'user' : 'assistant',
-          content: msg.message
-        })),
-        { role: "user", content: message as string }
-      ],
-      stream: true,
-    });
-
-    // 保存用户消息
-    const userMessageId = `msg_${Date.now()}_user`;
-    await conversationService.addMessage({
-      id: userMessageId,
-      conversation_id: conversation.id,
-      message: message as string,
-      status: 'success',
-      role: 'local'
-    });
-
     // 设置 SSE 头
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
@@ -87,15 +40,12 @@ app.get('/api/chat', authMiddleware, async (req, res) => {
       'Connection': 'keep-alive',
     });
 
-    // 创建 AI 消息占位符
-    const aiMessageId = `msg_${Date.now()}_ai`;
-    await conversationService.addMessage({
-      id: aiMessageId,
-      conversation_id: conversation.id,
-      message: '',
-      status: 'loading',
-      role: 'ai'
-    });
+    // 使用 ChatService 处理聊天
+    const { stream, aiMessageId } = await chatService.chat(
+      userId, 
+      message as string, 
+      conversationId as string
+    );
 
     let fullAiResponse = '';
     for await (const chunk of stream) {
@@ -105,10 +55,7 @@ app.get('/api/chat', authMiddleware, async (req, res) => {
     }
 
     // 更新 AI 消息
-    await conversationService.updateMessage(aiMessageId, {
-      message: fullAiResponse,
-      status: 'success'
-    });
+    await chatService.updateAIMessage(aiMessageId, fullAiResponse);
 
     res.write('data: [DONE]\n\n');
     res.end();
