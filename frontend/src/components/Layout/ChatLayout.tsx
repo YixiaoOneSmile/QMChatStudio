@@ -71,8 +71,10 @@ export const ChatLayout: React.FC = () => {
   }, [isDarkMode, token]);
 
   useEffect(() => {
-    dispatch(fetchConversations());
-  }, [dispatch]);
+    if (status === 'idle') {
+      dispatch(fetchConversations());
+    }
+  }, [dispatch, status]);
 
   if (!currentUser) {
     return <Navigate to="/login" />;
@@ -85,6 +87,7 @@ export const ChatLayout: React.FC = () => {
           conversations={conversations.map(conv => ({
             key: conv.id,
             label: conv.title,
+            updatedAt: conv.updatedAt,
           }))}
           activeKey={activeConversationId || ''}
           onActiveChange={handleConversationChange}

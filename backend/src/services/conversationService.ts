@@ -39,6 +39,7 @@ export class ConversationService {
           user_id: conv.user_id,
           title: conv.title,
           created_at: conv.created_at,
+          updated_at: conv.updated_at,
           messages: messages.map(msg => ({
             id: msg.id,
             conversation_id: msg.conversation_id,

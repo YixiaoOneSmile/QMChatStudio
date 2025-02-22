@@ -12,7 +12,8 @@ interface Conversation {
   id: string;
   title: string;
   messages: Message[];
-  createdAt: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface ConversationsState {
@@ -22,12 +23,21 @@ interface ConversationsState {
   error: string | null | undefined;
 }
 
+interface ApiConversation {
+  id: string;
+  title: string;
+  messages: Message[];
+  created_at: string;
+  updated_at: string;
+}
+
 const initialState: ConversationsState = {
   conversations: [{
     id: '0',
     title: '什么是 QMChatStudio?',
     messages: [],
-    createdAt: Date.now(),
+    createdAt: Date.now().toString(),
+    updatedAt: Date.now().toString(),
   }],
   activeConversationId: '0',
   status: 'idle',
@@ -39,7 +49,14 @@ export const fetchConversations = createAsyncThunk(
   'conversations/fetchAll',
   async () => {
     const response = await chatAPI.getConversations();
-    return response;
+    const conversations = Array.isArray(response) ? response : response.data;
+    return conversations.map((conv: ApiConversation) => ({
+      id: conv.id,
+      title: conv.title,
+      messages: conv.messages,
+      createdAt: conv.created_at,
+      updatedAt: conv.updated_at,
+    }));
   }
 );
 
@@ -55,7 +72,8 @@ const conversationsSlice = createSlice({
         id: Date.now().toString(),
         title: action.payload.title,
         messages: [],
-        createdAt: Date.now(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
       state.conversations.push(newConversation);
       state.activeConversationId = newConversation.id;
@@ -103,8 +121,21 @@ const conversationsSlice = createSlice({
         state.status = 'loading';
       })
       .addCase(fetchConversations.fulfilled, (state, action) => {
+        if (JSON.stringify(state.conversations) !== JSON.stringify(action.payload)) {
+          state.conversations = action.payload;
+          
+          const defaultConversation: Conversation = {
+            id: Date.now().toString(),
+            title: '新的对话',
+            messages: [],
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+          
+          state.conversations.unshift(defaultConversation);
+          state.activeConversationId = defaultConversation.id;
+        }
         state.status = 'succeeded';
-        state.conversations = action.payload;
       })
       .addCase(fetchConversations.rejected, (state, action) => {
         state.status = 'failed';

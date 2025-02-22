@@ -3,6 +3,7 @@ export interface User {
   id: string;
   name: string;
   avatar?: string;
+  token?: string;  // 添加 token 字段
   // ... 其他用户相关信息
 }
 
@@ -19,8 +20,8 @@ export interface Conversation {
   title: string;
   modelId: string;
   messages: Message[];
-  createdAt: number;
-  updatedAt: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Model {

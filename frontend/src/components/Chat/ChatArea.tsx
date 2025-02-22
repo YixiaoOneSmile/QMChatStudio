@@ -61,10 +61,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({ conversationId }) => {
   const dispatch = useDispatch();
   // 从 Redux 获取当前会话的消息
   const conversation = useSelector((state: RootState) => {
-    console.log('整个 Redux State:', state);
-    console.log('Conversations State:', state.conversations);
     const conv = state.conversations.conversations.find(conv => conv.id === conversationId);
-    console.log('当前对话:', conv);
     return conv;
   });
   const { currentModel } = useSelector((state: RootState) => state.models);
@@ -179,9 +176,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({ conversationId }) => {
 
   // 当 conversationId 变化时，从 Redux 加载对应会话的消息
   React.useEffect(() => {
-    console.log('当前会话消息:', conversation?.messages);
     if (conversation?.messages) {
-      console.log('设置消息到 XChat:', conversation.messages);
       setMessages(conversation.messages);
     } else {
       setMessages([]);
