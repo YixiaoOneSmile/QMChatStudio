@@ -11,6 +11,18 @@ export class UserService {
   }
 
   async register(userDTO: UserDTO) {
+    if (!userDTO.username || !userDTO.password) {
+      throw new Error('用户名和密码不能为空');
+    }
+
+    if (userDTO.username.length < 3) {
+      throw new Error('用户名长度不能小于3个字符');
+    }
+
+    if (userDTO.password.length < 6) {
+      throw new Error('密码长度不能小于6个字符');
+    }
+
     const existingUser = await this.userDao.findByUsername(userDTO.username);
     if (existingUser) {
       throw new Error('用户名已存在');

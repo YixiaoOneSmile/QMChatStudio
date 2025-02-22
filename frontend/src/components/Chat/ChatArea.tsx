@@ -12,6 +12,7 @@ import type { GetProp } from 'antd';
 import type { RootState } from '../../store';
 import styles from './ChatArea.module.css';
 import { addMessage, updateMessage } from '../../store/slices/conversationsSlice';
+import { chatAPI } from '../../services/api';
 
 const roles: GetProp<typeof Bubble.List, 'roles'> = {
   ai: {
@@ -59,9 +60,13 @@ type BubbleItem = GetProp<typeof Bubble.List, 'items'>[number];
 export const ChatArea: React.FC<ChatAreaProps> = ({ conversationId }) => {
   const dispatch = useDispatch();
   // 从 Redux 获取当前会话的消息
-  const conversation = useSelector((state: RootState) => 
-    state.conversations.conversations.find(conv => conv.id === conversationId)
-  );
+  const conversation = useSelector((state: RootState) => {
+    console.log('整个 Redux State:', state);
+    console.log('Conversations State:', state.conversations);
+    const conv = state.conversations.conversations.find(conv => conv.id === conversationId);
+    console.log('当前对话:', conv);
+    return conv;
+  });
   const { currentModel } = useSelector((state: RootState) => state.models);
   const [content, setContent] = React.useState('');
   const [attachedFiles, setAttachedFiles] = React.useState<GetProp<typeof Attachments, 'items'>>([]);
@@ -77,7 +82,6 @@ export const ChatArea: React.FC<ChatAreaProps> = ({ conversationId }) => {
   const [agent] = useXAgent({
     baseURL: 'http://localhost:3001/api',
     model: currentModel?.id,
-    // 处理消息发送和接收的核心逻辑
     request: async ({ message }, { onSuccess, onUpdate }) => {
       // 使用 ref 中的 conversationId，确保总是使用当前激活的会话 ID
       const activeConversationId = currentConversationId.current;
@@ -90,7 +94,8 @@ export const ChatArea: React.FC<ChatAreaProps> = ({ conversationId }) => {
         message: {
           id: messageId,
           message,
-          status: 'local'
+          status: 'local',
+          role: 'local'
         }
       }));
 
@@ -102,69 +107,61 @@ export const ChatArea: React.FC<ChatAreaProps> = ({ conversationId }) => {
           message: {
             id: aiMessageId,
             message: '',
-            status: 'loading'
+            status: 'loading',
+            role: 'ai'
           }
         }));
 
-        // 使用 EventSource 处理流式响应
+        // 使用 EventSource 处理流式响应，传递 conversationId
+        const stream = await chatAPI.sendMessage(message, activeConversationId);
+        if (!stream) throw new Error('No response stream');
+
+        const reader = stream.getReader();
         let currentContent = '';
-        const es = new EventSource(`http://localhost:3001/api/chat?message=${encodeURIComponent(message)}`);
 
-        es.onmessage = (event) => {
-          const data = event.data;
-          // 处理流式响应结束
-          if (data === '[DONE]') {
-            es.close();
-            dispatch(updateMessage({
-              conversationId: activeConversationId,
-              messageId: aiMessageId,
-              updates: { 
-                status: 'success',
-                message: currentContent 
-              }
-            }));
-            onSuccess(currentContent);
-            return;
-          }
-          // 处理流式内容更新
-          try {
-            // 解析流式响应数据
-            const obj = JSON.parse(data);
-            const content = obj.choices[0]?.delta?.content;
-            // 如果内容存在，则更新消息内容
-            if (content) {
-              currentContent += content;
-              dispatch(updateMessage({
-                conversationId: activeConversationId,
-                messageId: aiMessageId,
-                updates: { 
-                  message: currentContent,
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const text = new TextDecoder().decode(value);
+          const lines = text.split('\n');
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6);
+              if (data === '[DONE]') continue;
+
+              try {
+                const parsed = JSON.parse(data);
+                const content = parsed.choices[0]?.delta?.content || '';
+                if (content) {
+                  currentContent += content;
+                  dispatch(updateMessage({
+                    conversationId: activeConversationId,
+                    messageId: aiMessageId,
+                    updates: { 
+                      message: currentContent,
+                    }
+                  }));
+                  onUpdate(currentContent);
                 }
-              }));
-              onUpdate(currentContent);
+              } catch (e) {
+                console.error('解析响应数据错误:', e);
+              }
             }
-          } catch (e) {
-            console.error('解析响应数据错误:', e);
-            es.close();
-            dispatch(updateMessage({
-              conversationId: activeConversationId,
-              messageId: aiMessageId,
-              updates: { status: 'success' }
-            }));
-            onSuccess(currentContent);
           }
-        };
+        }
 
-        es.onerror = (error) => {
-          console.error('EventSource 错误:', error);
-          es.close();
-          dispatch(updateMessage({
-            conversationId: activeConversationId,
-            messageId: aiMessageId,
-            updates: { status: 'success' }
-          }));
-          onSuccess(currentContent);
-        };
+        // 更新最终状态
+        dispatch(updateMessage({
+          conversationId: activeConversationId,
+          messageId: aiMessageId,
+          updates: { 
+            status: 'success',
+            message: currentContent 
+          }
+        }));
+        onSuccess(currentContent);
 
       } catch (error) {
         console.error('发送消息错误:', error);
@@ -182,10 +179,12 @@ export const ChatArea: React.FC<ChatAreaProps> = ({ conversationId }) => {
 
   // 当 conversationId 变化时，从 Redux 加载对应会话的消息
   React.useEffect(() => {
+    console.log('当前会话消息:', conversation?.messages);
     if (conversation?.messages) {
+      console.log('设置消息到 XChat:', conversation.messages);
       setMessages(conversation.messages);
     } else {
-      setMessages([]); // 如果没有消息，清空当前消息列表
+      setMessages([]);
     }
   }, [conversationId, conversation?.messages, setMessages]);
 
@@ -230,15 +229,13 @@ export const ChatArea: React.FC<ChatAreaProps> = ({ conversationId }) => {
     }
 
     // 将消息转换为气泡项
-    return conversation.messages.map(({ id, message, status }) => ({
+    return conversation.messages.map(({ id, message, status, role }) => ({
       key: id,
-      role: status === 'local' ? 'local' : 'ai',
+      role: role === 'local' ? 'local' : 'ai',
       content: message,
-      // 当消息为空且状态为 loading 时，显示加载状态
       loading: status === 'loading' && !message,
-      // 当有内容且状态为 loading 时，使用打字机效果
       typing: status === 'loading' && message ? { step: 5, interval: 20 } : undefined,
-      variant: status === 'local' ? 'shadow' as const : undefined,
+      variant: role === 'local' ? 'shadow' as const : undefined,
     }));
   }, [conversation?.messages]);
 

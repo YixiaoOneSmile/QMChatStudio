@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Navigate } from 'react-router-dom';
 import { Button, Space, Dropdown, Layout, theme } from 'antd';
@@ -15,14 +15,16 @@ import { Sidebar } from './Sidebar';
 import { ChatArea } from '../Chat/ChatArea';
 import { 
   addConversation, 
-  setActiveConversation 
+  setActiveConversation, 
+  fetchConversations
 } from '../../store/slices/conversationsSlice';
+import type { AppDispatch } from '../../store';
 
 const { Sider, Content } = Layout;
 
 export const ChatLayout: React.FC = () => {
-  const dispatch = useDispatch();
-  const { conversations, activeConversationId } = useSelector(
+  const dispatch = useDispatch<AppDispatch>();
+  const { conversations, activeConversationId, status } = useSelector(
     (state: RootState) => state.conversations
   );
   const { currentUser } = useSelector((state: RootState) => state.user);
@@ -67,6 +69,10 @@ export const ChatLayout: React.FC = () => {
       root.style.setProperty('--content-bg', '#f5f5f5');
     }
   }, [isDarkMode, token]);
+
+  useEffect(() => {
+    dispatch(fetchConversations());
+  }, [dispatch]);
 
   if (!currentUser) {
     return <Navigate to="/login" />;

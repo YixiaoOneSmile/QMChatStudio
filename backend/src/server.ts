@@ -3,6 +3,10 @@ import cors from 'cors';
 import { OpenAI } from 'openai';
 import dotenv from 'dotenv';
 import { UserService } from './services/userService';
+import { ConversationService } from './services/conversationService';
+import { authMiddleware } from './middleware/auth';
+import { AuthenticatedRequest } from './types/custom';
+import { Request } from 'express';
 
 dotenv.config();
 
@@ -16,15 +20,49 @@ const openai = new OpenAI({
 });
 
 const userService = new UserService();
+const conversationService = new ConversationService();
 
 app.use(cors());
 app.use(express.json());
 
-// 修改为 GET 请求
-app.get('/api/chat', async (req, res) => {
+// 聊天接口
+app.get('/api/chat', authMiddleware, async (req, res) => {
   try {
-    const { message } = req.query;
-    
+    const { message, conversationId } = req.query;
+    const userId = (req as any).user.id;
+
+    // 如果没有 conversationId，创建新对话
+    let conversation;
+    if (!conversationId) {
+      const title = (message as string).slice(0, 20) + '...';
+      conversation = await conversationService.createConversation(
+        userId,
+        title,
+        Date.now().toString()
+      );
+    } else {
+      conversation = await conversationService.getConversation(conversationId as string);
+   
+      if (!conversation) {
+        const title = (message as string).slice(0, 20) + '...';
+        conversation = await conversationService.createConversation(
+          userId,
+          title,
+          conversationId as string
+        );
+      }
+    }
+
+    // 保存用户消息
+    const userMessageId = `msg_${Date.now()}_user`;
+    await conversationService.addMessage({
+      id: userMessageId,
+      conversation_id: conversation.id,
+      message: message as string,
+      status: 'success',
+      role: 'local'
+    });
+
     // 设置 SSE 头
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
@@ -32,24 +70,35 @@ app.get('/api/chat', async (req, res) => {
       'Connection': 'keep-alive',
     });
 
-    // 先发送一个空的 delta 内容，触发前端的 loading 状态
-    res.write(`data: ${JSON.stringify({
-      choices: [{ delta: { content: null } }]
-    })}\n\n`);
+    // 创建 AI 消息占位符
+    const aiMessageId = `msg_${Date.now()}_ai`;
+    await conversationService.addMessage({
+      id: aiMessageId,
+      conversation_id: conversation.id,
+      message: '',
+      status: 'loading',
+      role: 'ai'
+    });
 
-    // 添加 5 秒延迟
-    // await new Promise(resolve => setTimeout(resolve, 5000));
-
+    // 使用原有的 xagent 或 xchat 逻辑处理消息
     const stream = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [{ role: "user", content: message as string }],
       stream: true,
     });
 
-    // 处理流式响应
+    let fullAiResponse = '';
     for await (const chunk of stream) {
+      const content = chunk.choices[0]?.delta?.content || '';
+      fullAiResponse += content;
       res.write(`data: ${JSON.stringify(chunk)}\n\n`);
     }
+
+    // 更新 AI 消息
+    await conversationService.updateMessage(aiMessageId, {
+      message: fullAiResponse,
+      status: 'success'
+    });
 
     res.write('data: [DONE]\n\n');
     res.end();
@@ -98,6 +147,79 @@ app.delete('/api/admin/users/:id', async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: '删除用户失败' });
+  }
+});
+
+// 获取用户的所有对话
+app.get('/api/conversations', authMiddleware, async (req, res) => {
+  try {
+    const userId = (req as any).user.id;
+    const conversations = await conversationService.getUserConversations(userId);
+    res.json(conversations);
+  } catch (error) {
+    res.status(500).json({ error: '获取对话列表失败' });
+  }
+});
+
+// 获取单个对话及其消息
+app.get('/api/conversations/:id', async (req, res) => {
+  try {
+    const conversation = await conversationService.getConversation(req.params.id);
+    if (!conversation) {
+      return res.status(404).json({ error: '对话不存在' });
+    }
+    res.json(conversation);
+  } catch (error) {
+    res.status(500).json({ error: '获取对话失败' });
+  }
+});
+
+// 创建新对话
+app.post('/api/conversations', authMiddleware, async (req, res) => {
+  try {
+    const { title, id } = req.body;
+    const userId = (req as any).user.id;
+    const conversation = await conversationService.createConversation(userId, title, id);
+    res.json(conversation);
+  } catch (error) {
+    res.status(500).json({ error: '创建对话失败' });
+  }
+});
+
+// 添加消息
+app.post('/api/conversations/:id/messages', async (req, res) => {
+  try {
+    const { id, message, status } = req.body;
+    const newMessage = await conversationService.addMessage({
+      id,
+      conversation_id: req.params.id,
+      message,
+      status
+    });
+    res.json(newMessage);
+  } catch (error) {
+    res.status(500).json({ error: '添加消息失败' });
+  }
+});
+
+// 更新消息状态
+app.patch('/api/messages/:id', async (req, res) => {
+  try {
+    const { status } = req.body;
+    await conversationService.updateMessageStatus(req.params.id, status);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: '更新消息状态失败' });
+  }
+});
+
+// 删除对话
+app.delete('/api/conversations/:id', async (req, res) => {
+  try {
+    await conversationService.deleteConversation(req.params.id);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: '删除对话失败' });
   }
 });
 

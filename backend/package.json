@@ -11,8 +11,9 @@
     "db:seed": "ts-node src/database/dbManager.ts seed",
     "db:rollback": "ts-node src/database/dbManager.ts rollback",
     "db:setup": "ts-node src/database/dbManager.ts setup",
-    "build:admin": "cd src/admin && npm run build",
-    "postbuild:admin": "mkdir -p public/admin && cp -r src/admin/dist/* public/admin/"
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "migrate": "ts-node src/database/migrate.ts"
   },
   "keywords": [],
   "author": "",
@@ -31,8 +32,13 @@
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
+    "@types/jest": "^29.5.14",
     "@types/node": "^20.10.6",
+    "@types/supertest": "^6.0.2",
+    "jest": "^29.7.0",
     "nodemon": "^3.0.2",
+    "supertest": "^7.0.0",
+    "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
   }

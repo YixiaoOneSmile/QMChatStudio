@@ -1,10 +1,12 @@
 import * as createUsersTable from './migrations/001_create_users_table';
+import * as createConversationsTable from './migrations/002_create_conversations_table';
 import * as createDefaultUser from './seeds/001_create_default_user';
 import { pool } from '../config/database';
 
 async function migrate() {
   console.log('🚀 Running migrations...');
   await createUsersTable.up();
+  await createConversationsTable.up();
   console.log('✨ All migrations completed');
 }
 
@@ -16,6 +18,7 @@ async function seed() {
 
 async function rollback() {
   console.log('⏪ Rolling back migrations...');
+  await createConversationsTable.down();
   await createUsersTable.down();
   console.log('✨ Rollback completed');
 }

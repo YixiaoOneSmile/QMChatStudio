@@ -1,9 +1,11 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
+import { chatAPI } from '../../services/api';
 
 interface Message {
   id: string;
   message: string;
   status: 'local' | 'loading' | 'success';
+  role?: 'local' | 'ai';
 }
 
 interface Conversation {
@@ -16,6 +18,8 @@ interface Conversation {
 interface ConversationsState {
   conversations: Conversation[];
   activeConversationId: string | null;
+  status: 'idle' | 'loading' | 'succeeded' | 'failed';
+  error: string | null | undefined;
 }
 
 const initialState: ConversationsState = {
@@ -26,7 +30,18 @@ const initialState: ConversationsState = {
     createdAt: Date.now(),
   }],
   activeConversationId: '0',
+  status: 'idle',
+  error: null,
 };
+
+// 添加获取对话列表的异步 action
+export const fetchConversations = createAsyncThunk(
+  'conversations/fetchAll',
+  async () => {
+    const response = await chatAPI.getConversations();
+    return response;
+  }
+);
 
 const conversationsSlice = createSlice({
   name: 'conversations',
@@ -81,6 +96,20 @@ const conversationsSlice = createSlice({
         state.activeConversationId = state.conversations[0]?.id || null;
       }
     },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchConversations.pending, (state) => {
+        state.status = 'loading';
+      })
+      .addCase(fetchConversations.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        state.conversations = action.payload;
+      })
+      .addCase(fetchConversations.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.error.message || null;
+      });
   },
 });
 
