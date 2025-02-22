@@ -77,4 +77,8 @@ export class ConversationService {
   async updateMessage(messageId: string, update: MessageUpdate): Promise<void> {
     await this.conversationDao.updateMessage(messageId, update);
   }
+
+  async getRecentMessages(conversationId: string, limit: number) {
+    return await this.conversationDao.getRecentMessages(conversationId, limit);
+  }
 } 

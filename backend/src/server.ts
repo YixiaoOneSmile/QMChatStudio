@@ -53,6 +53,23 @@ app.get('/api/chat', authMiddleware, async (req, res) => {
       }
     }
 
+    // 获取最近10轮对话历史
+    const messageHistory = await conversationService.getRecentMessages(conversation.id, 10);
+
+    // @ts-ignore
+    const stream = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: "You are a helpful assistant." },
+        ...messageHistory.map(msg => ({
+          role: msg.role === 'local' ? 'user' : 'assistant',
+          content: msg.message
+        })),
+        { role: "user", content: message as string }
+      ],
+      stream: true,
+    });
+
     // 保存用户消息
     const userMessageId = `msg_${Date.now()}_user`;
     await conversationService.addMessage({
@@ -78,13 +95,6 @@ app.get('/api/chat', authMiddleware, async (req, res) => {
       message: '',
       status: 'loading',
       role: 'ai'
-    });
-
-    // 使用原有的 xagent 或 xchat 逻辑处理消息
-    const stream = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [{ role: "user", content: message as string }],
-      stream: true,
     });
 
     let fullAiResponse = '';

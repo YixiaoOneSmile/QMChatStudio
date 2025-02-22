@@ -19,6 +19,7 @@ import {
   fetchConversations
 } from '../../store/slices/conversationsSlice';
 import type { AppDispatch } from '../../store';
+import { logout } from '../../store/slices/userSlice';
 
 const { Sider, Content } = Layout;
 
@@ -56,7 +57,8 @@ export const ChatLayout: React.FC = () => {
   ];
 
   const handleLogout = () => {
-    // 处理退出登录逻辑
+    // 退出登录
+    dispatch(logout());
   };
 
   React.useEffect(() => {

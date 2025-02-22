@@ -182,4 +182,23 @@ export class ConversationDao {
       connection.release();
     }
   }
+
+  async getRecentMessages(conversationId: string, limit: number): Promise<Message[]> {
+    const [messages] = await pool.execute<RowDataPacket[]>(
+      `SELECT * FROM messages 
+       WHERE conversation_id = ? 
+       ORDER BY created_at DESC 
+       LIMIT ${Number(limit)}`,
+      [conversationId]
+    );
+
+    return messages.reverse().map(msg => ({
+      id: msg.id,
+      conversation_id: msg.conversation_id,
+      message: msg.message,
+      status: msg.status || 'success',
+      role: msg.role as 'local' | 'ai',
+      created_at: msg.created_at
+    }));
+  }
 } 

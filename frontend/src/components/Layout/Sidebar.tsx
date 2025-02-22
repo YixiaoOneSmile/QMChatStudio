@@ -1,10 +1,9 @@
 import React, { useContext } from 'react';
-import { Button, Space } from 'antd';
+import { Button } from 'antd';
 import { Conversations } from '@ant-design/x';
 import { PlusOutlined, LogoutOutlined } from '@ant-design/icons';
 import { ThemeContext } from '../../contexts/ThemeContext';
 import styles from './Sidebar.module.css';
-import type { ConversationsProps } from '@ant-design/x';
 import { type GetProp } from 'antd';
 
 interface SidebarProps {
