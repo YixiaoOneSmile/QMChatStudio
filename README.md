@@ -2,7 +2,13 @@
 
 ![QMChatStudio主页](/images/show.jpg)
 
+
+
+QMChatStudio is a chat application based on OpenAI API and Ant Design X component library, providing streaming response conversation experience.
+
 这是一个基于 OpenAI API 与 Ant Design X 的组件库的的聊天应用 ,提供了流式响应的对话体验。
+
+
 
 ## 技术栈
 
@@ -65,6 +71,15 @@ npm run db:rollback # 回滚（删除表）
 # 运行后端
 npm run dev
 ```
+
+## ToDoList
+| 功能 | 状态 |
+|------|------|
+| 用户后台管理系统 | □ |
+| 用户权限管理 | □ |
+| 用户数据统计面板 | □ |
+| 接入支付 | □ |
+
 
 
 
